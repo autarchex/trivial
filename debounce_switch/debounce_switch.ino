@@ -32,17 +32,25 @@ void setup(){
 }
 
 void loop(){
-  //B is on portB.2, A is on portB.0; com is on portB.1 and is set low
-  //wait for switch activity on port 2 or 0
   boolean CW = false;
   boolean CCW = false;
+  //B is on portB.2, A is on portB.0; com is on portB.1 and is set low
+  //wait for switch activity on port 2 or 0
   if(uint8_t change = detectSwitchActivity() & 0x05){
-    rotA = (rotA << 1) & 0x0f;
-    rotB = (rotB << 1) & 0x0f;
-    if(debouncedState & (1<<0)) rotA |= 1;
-    if(debouncedState & (1<<2)) rotB |= 1;
-    if((rotA & 0x0f) == 0x03 && (rotB & 0x07) == 0x01) CCW = true;
-    if((rotA & 0x07) == 0x01 && (rotB & 0x0f) == 0x03) CW = true;  
+    rotA = (rotA << 1) | (debouncedState & (1<<0));        //shift left, shift in new A bit
+    rotB = (rotB << 1) | ((debouncedState & (1<<2)) >> 2); //shift left, shift in new B bit
+    if((change & (1<<2)) && (rotB & (1<<0)) && (rotA & (1<<1))) {             //B went high and A already high
+      CCW = true;
+    }
+    else if((change & (1<<0)) && (rotA & (1<<0)) && (rotB & (1<<1))) {        //A went high and B already high
+      CW = true;
+    }
+    else if((change & (1<<2)) && ~(rotB & (1<<0)) && ~(rotA & (1<<1))) {      //B went low and A already low
+      CCW = true;
+    }
+    else if((change & (1<<0)) && ~(rotA & (1<<0)) && ~(rotB & (1<<1))) {      //A went low and B already low
+      CW = true;
+    }  
     if(CW || CCW) {
       line++;
       if(CW) Serial.print("CW");
@@ -51,6 +59,7 @@ void loop(){
     }
   }
 }
+
   
 //METHOD 1: This debounces a single switch input.
 //Call this from a timer interrupt.
@@ -75,6 +84,7 @@ SIGNAL(TIMER0_COMPA_vect) {
     if(index >= DEB_CHECKS) index = 0;  //wrap circular buffer at end
   }
 }
+
 //call this when you need to know if a button was pressed
 //returns a state-changed mask identifying which switches changed; updates debouncedState with new state.
 uint8_t detectSwitchActivity() {
