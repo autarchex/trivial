@@ -1,8 +1,8 @@
 #!/usr/bin/python
 #Combine SMU output files (csv) having identical time series into one file.
-#Extracts VOLT1 and CURR1 from each input file, and writes them as VOLTn and CURRn
+#Extracts VOLT and CURR from each input file, and writes them as VOLTn and CURRn
 #in the output file.
-#Extracts TIME1 from first input file, and writes it to TIME in output file.
+#Extracts TIME from first input file, and writes it to TIME in output file.
 #No other input columns make it to the output.
 #Output columns are ordered as: TIME, VOLT1, ... VOLTn, CURR1, ... CURRn
 #This will make it easier to read them back in for arbitrary sample sizes
@@ -34,23 +34,23 @@ for f in sorted(csvfiles):
 print("Input files: " + str(infiles))
 
 #import all files as dataframes, store in a list
-frames = [pandas.read_csv(f, converters={'TIME1':d.Decimal, 'VOLT1':d.Decimal, 'CURR1':d.Decimal}) for f in infiles]
+frames = [pandas.read_csv(f, converters={'TIME':d.Decimal, 'VOLT':d.Decimal, 'CURR':d.Decimal}) for f in infiles]
 
 #TODO: create new dataframe, 'outframe'
 outframe = pandas.DataFrame()
-outframe['TIME'] = frames[0].TIME1      #add time data to output
+outframe['TIME'] = frames[0].TIME      #add time data to output
 
 
 #move voltage data to output
 for n in range(len(frames)):
     colname = "VOLT" + str(n + 1)
-    incol = frames[n].VOLT1
+    incol = frames[n].VOLT
     outframe[colname] = incol
 
 #move current data to output
 for n in range(len(frames)):
     colname = "CURR" + str(n + 1)
-    incol = frames[n].CURR1
+    incol = frames[n].CURR
     outframe[colname] = incol
 
 print("Output file: " + outfilename)
